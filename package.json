@@ -17,6 +17,7 @@
     "dotenv": "^8.2.0",
     "ffmpeg": "0.0.4",
     "fluent-ffmpeg": "^2.1.2",
+    "lowdb": "^1.0.0",
     "prettier": "^2.2.1",
     "ytdl-core": "^4.5.0"
   },

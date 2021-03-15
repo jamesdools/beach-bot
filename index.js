@@ -2,6 +2,7 @@ require('dotenv').config();
 
 const Discord = require('discord.js');
 const ytdl = require('ytdl-core');
+const db = require('./db');
 
 const bot = new Discord.Client();
 
@@ -25,12 +26,6 @@ bot.once('disconnect', () => {
 // Main logic
 const prefix = '~';
 const queue = new Map();
-const userPreferences = new Map();
-
-const DEFAULT_SONG = {
-  title: 'I AM UNTETHERED AND MY RAGE KNOWS NO BOUNDS',
-  url: 'https://www.youtube.com/watch?v=LL4JE5N_S5o',
-};
 
 const parseArgs = (content) => {
   const args = content.slice(prefix.length).trim().split(' ');
@@ -67,14 +62,17 @@ const entranceMusic = async (message) => {
     url: songInfo.videoDetails.video_url,
   };
 
-  console.log(song);
-
+  
   const user = message.author.id;
   const name = message.author.username;
+  
+  console.log(`user: ${user}`);
+  console.log(song);
+  console.log('Entrance music set');
 
-  userPreferences.set(user, song);
+  await db.save(user, song);
 
-  return message.channel.send(`${name} entrance music set: {${song.title}`);
+  return message.channel.send(`**${name}**'s entrance now music set: _${song.title}_`);
 };
 
 const play = (guild, song) => {
@@ -83,6 +81,7 @@ const play = (guild, song) => {
   if (!song) {
     serverQueue.voiceChannel.leave();
     queue.delete(guild.id);
+
     return;
   }
 
@@ -105,8 +104,7 @@ bot.on('message', async (message) => {
   if (message.author.bot) return;
   if (!message.content.startsWith(prefix)) return;
 
-  console.log('guild id: ' + message.guild.id);
-  console.log('\n');
+  console.log('Guild ID: ' + message.guild.id);
 
   if (message.content.startsWith(prefix + 'beach')) {
     console.log(message.channel);
@@ -127,7 +125,11 @@ bot.on('voiceStateUpdate', async (oldState, newState) => {
     console.log(`New user joined channel: ${newState.guild.name}`);
 
     const user = newState.id;
-    const song = userPreferences.get(user) || DEFAULT_SONG;
+    const { song } = await db.get(user);
+    
+    if (!song) return; // Do nothing if no song is set
+
+    console.log('Adding song to queue: ', song);
 
     const serverQueue = queue.get(newState.guild.id);
 
@@ -161,3 +163,13 @@ bot.on('voiceStateUpdate', async (oldState, newState) => {
   }
 });
 
+const init = async () => {
+  // await db.save('test-user-id', {
+  //   title: 'title',
+  //   url: 'https://www.youtube.com/watch?v=WWyI-58gpic'
+  // });
+
+  // const result = await db.get('365579546256343060');
+  // console.log(result);
+}
+init();
