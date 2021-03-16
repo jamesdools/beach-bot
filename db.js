@@ -14,19 +14,34 @@ const getFromDb = async (user) => {
   return record;
 };
 
-const saveToDb = async (user, song) => {
+const saveSongToDb = async (user, song) => {
   const db = await low(adapter);
 
   const record = await db.get(USERS).find({ user }).value();
 
   if (record) {
-    console.log('Updating record');
+    console.log('Updating entrance song');
 
     await db.get(USERS).find({ user }).assign({ song }).write();
   } else {
-    console.log('Creating new record');
+    console.log('Adding entrance song');
 
-    await db.get(USERS).push({ user, song }).write();
+    await db.get(USERS).push({ user, song, enabled: true }).write();
+  }
+};
+
+const saveSettingToDb = async (user, newSetting) => {
+  const db = await low(adapter);
+
+  const record = await db.get(USERS).find({ user }).value();
+
+  if (record) {
+    console.log('Updating setting');
+
+    console.log(record);
+    await db.get(USERS).find({ user }).assign({ enabled: newSetting }).write();
+  } else {
+    console.log('No records for user');
   }
 };
 
@@ -39,5 +54,6 @@ init();
 
 module.exports = {
   get: getFromDb,
-  save: saveToDb,
+  saveSong: saveSongToDb,
+  saveSetting: saveSettingToDb,
 };

@@ -50,7 +50,7 @@ const checkVoice = (message) => {
   }
 };
 
-const entranceMusic = async (message, songType) => {
+const entranceMusic = async (message) => {
   const { args, command } = parseArgs(message.content);
   const songUrl = args[1];
   const startTime = args[2] || '0:00';
@@ -75,7 +75,7 @@ const entranceMusic = async (message, songType) => {
   console.log(`User: ${name} - entrance music set`);
   console.log(`ID: ${user}`);
 
-  await db.save(user, song);
+  await db.saveSong(user, song);
 
   return message.channel.send(`**${name}**'s entrance now music set: _${song.title}_`);
 };
@@ -118,6 +118,21 @@ const play = (guild, song) => {
   dispatcher.setVolumeLogarithmic(serverQueue.volume / 5);
 };
 
+const updateSettings = async (message, entranceMusicIsOn) => {
+    const user = message.author.id;
+    const name = message.author.username;
+    const userSettings = await db.get(user);
+
+    if (!userSettings) {
+      return message.channel.send('You haven\'t registered any entrance music!'); 
+    }
+
+    await db.saveSetting(user, entranceMusicIsOn);
+
+    const result = entranceMusicIsOn ? 'enabled' : 'disabled';
+    message.channel.send(`Entrance music for **${name}** now ${result}.`);
+}
+
 bot.on('message', async (message) => {
   if (message.author.bot) return;
   if (!message.content.startsWith(prefix)) return;
@@ -150,7 +165,10 @@ bot.on('message', async (message) => {
       };
       
       message.channel.send({ embed: exampleEmbed });
-
+  } else if (message.content === prefix + 'entrance on') {
+    await updateSettings(message, true);
+  } else if (message.content === prefix + 'entrance off') {
+    await updateSettings(message, false);
   } else if (message.content.startsWith(prefix + 'entrance')) {
     // checkVoice(message);
     await entranceMusic(message);
