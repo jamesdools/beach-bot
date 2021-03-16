@@ -1,8 +1,7 @@
 require('dotenv').config();
 
 const Discord = require('discord.js');
-const ytdl = require('ytdl-core');
-// const ytdl = require("discord-ytdl-core");
+const ytdl = require('discord-ytdl-core');
 const db = require('./db');
 
 const bot = new Discord.Client();
@@ -54,7 +53,8 @@ const checkVoice = (message) => {
 const entranceMusic = async (message, songType) => {
   const { args, command } = parseArgs(message.content);
   const songUrl = args[1];
-  const startTime = args[2] || '0s';
+  const startTime = args[2] || '0:00';
+  const endTime = args[3] || null;
 
   if (!songUrl) return message.channel.send('No YouTube URL to use!');
 
@@ -64,6 +64,7 @@ const entranceMusic = async (message, songType) => {
     title: songInfo.videoDetails.title,
     url: songInfo.videoDetails.video_url,
     startTime,
+    endTime,
   };
 
   const user = message.author.id;
@@ -89,27 +90,33 @@ const play = (guild, song) => {
     return;
   }
 
-  const ytdlContent = ytdl(song.url, {
-      filter: 'audioonly',
-      begin: song.startTime
-    });
+  let nowPlayingString = `Now playing: ${song.title} from ${song.startTime}`;
 
-  console.log(ytdlContent);
+  ffmpegArgs = ['-ss', song.startTime];
+
+  if (song.endTime) {
+    ffmpegArgs.push('-to', song.endTime);
+    nowPlayingString = `${nowPlayingString} to ${song.endTime}`;
+  }
+
+  console.log(nowPlayingString);
+
+  const ytdlContent = ytdl(song.url, {
+    filter: 'audioonly',
+    opusEncoded: true,
+    encoderArgs: ffmpegArgs,
+  });
 
   const dispatcher = serverQueue.connection
-    .play(ytdlContent)
+    .play(ytdlContent, { type: 'opus' })
     .on('finish', () => {
       serverQueue.songs.shift();
       play(guild, serverQueue.songs[0]);
     })
-    .on('error', (error) => console.error(error));
+    .on('error', (error) => console.error('err'));
 
   dispatcher.setVolumeLogarithmic(serverQueue.volume / 5);
-
-  if (serverQueue.textChannel) {
-    serverQueue.textChannel.send(`Now playing: **${song.title}**`);
-  }
-}
+};
 
 bot.on('message', async (message) => {
   if (message.author.bot) return;
@@ -125,9 +132,7 @@ bot.on('message', async (message) => {
   }
 });
 
-const handleUserJoin = (voiceState) => {
-
-}
+const handleUserJoin = (voiceState) => {};
 
 bot.on('voiceStateUpdate', async (oldState, newState) => {
   console.log('voiceStateUpdate');
@@ -141,12 +146,10 @@ bot.on('voiceStateUpdate', async (oldState, newState) => {
 
     const user = newState.id;
     const record = await db.get(user);
-    
+
     if (!record) return; // Do nothing if no record
 
     const { song } = record;
-
-    console.log('Adding song to queue: ', song);
 
     const serverQueue = queue.get(newState.guild.id);
 
@@ -165,17 +168,18 @@ bot.on('voiceStateUpdate', async (oldState, newState) => {
 
       try {
         const connection = await newState.channel.join();
-        
+
         queueContruct.connection = connection;
 
+        console.log('Adding song to queue: ', song);
         play(newState.guild, song, connection);
       } catch (err) {
         console.log(err);
       }
     } else {
-        serverQueue.songs.push(song);
+      serverQueue.songs.push(song);
 
-        console.log(`${song.title} queued up!`);
+      console.log('Adding song to queue: ', song);
     }
   } else if (oldChannel && !newChannel) {
     console.log(`User left the channel.`);
@@ -185,6 +189,6 @@ bot.on('voiceStateUpdate', async (oldState, newState) => {
 const init = async () => {
   // const result = await db.get('365579546256343060');
   // console.log(result);
-}
+};
 
 init();

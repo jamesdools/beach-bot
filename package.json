@@ -6,7 +6,7 @@
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "start": "node index.js",
-    "start:dev": "nodemon index.js",
+    "start:dev": "nodemon index.js --ignore '*.json'",
     "lint": "npx prettier --write ."
   },
   "author": "",
@@ -16,8 +16,6 @@
     "discord-ytdl-core": "^5.0.1",
     "discord.js": "^12.5.1",
     "dotenv": "^8.2.0",
-    "ffmpeg": "0.0.4",
-    "fluent-ffmpeg": "^2.1.2",
     "lowdb": "^1.0.0",
     "prettier": "^2.2.1",
     "ytdl-core": "^4.5.0"
