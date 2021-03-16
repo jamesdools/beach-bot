@@ -12,7 +12,7 @@ const { TOKEN } = process.env;
 bot.login(TOKEN);
 
 bot.once('ready', () => {
-  console.log('Ready!');
+  console.log('BeachBot is ready! 🤘 👕 🏖');
 });
 
 bot.once('reconnecting', () => {
@@ -26,6 +26,29 @@ bot.once('disconnect', () => {
 // Main logic
 const prefix = '~';
 const queue = new Map();
+
+const helpScreen = {
+  color: '#fed049',
+  author: {
+    name: 'BeachBot',
+    url: 'https://github.com/jamesdools/beach-bot',
+  },
+  description: 'Everyone deserves entrance music.',
+  fields: [
+    {
+      name: '`~entrance` \t [url] \t [startTime]',
+      value: '**url** must be a valid YouTube link\n\
+      **startTime** format `mm:ss`, eg. `2:48`',
+    },
+    {
+      name: '`~entrance` \t **on** | **off**',
+      value: 'Enable or disable entrance music.',
+    },
+  ],
+  image: {
+    url: 'https://media.tenor.com/images/057161e766253130ca174e0b3740c0cd/tenor.gif',
+  }
+};
 
 const parseArgs = (content) => {
   const args = content.slice(prefix.length).trim().split(' ');
@@ -130,7 +153,7 @@ const updateSettings = async (message, entranceMusicIsOn) => {
     await db.saveSetting(user, entranceMusicIsOn);
 
     const result = entranceMusicIsOn ? 'enabled' : 'disabled';
-    message.channel.send(`Entrance music for **${name}** now ${result}.`);
+    message.channel.send(`Entrance music for **${name}** ${result}.`);
 }
 
 bot.on('message', async (message) => {
@@ -142,29 +165,7 @@ bot.on('message', async (message) => {
   if (message.content.startsWith(prefix + 'beach')) {
     message.channel.send('shirt!'); 
   } else if (message.content.startsWith(prefix + 'help')) {
-      const exampleEmbed = {
-        color: '#fed049',
-        author: {
-          name: 'BeachBot',
-          url: 'https://github.com/jamesdools/beach-bot',
-        },
-        description: 'Everyone deserves entrance music.',
-        fields: [
-          {
-            name: '\u200B',
-            value: '\u200B',
-          },
-          {
-            name: '`~entrance` [url] [startTime]',
-            value: '> startTime format `mm:ss`, eg. 2:48',
-          },
-        ],
-        image: {
-          url: 'https://media.tenor.com/images/057161e766253130ca174e0b3740c0cd/tenor.gif',
-        }
-      };
-      
-      message.channel.send({ embed: exampleEmbed });
+    message.channel.send({ embed: helpScreen });
   } else if (message.content === prefix + 'entrance on') {
     await updateSettings(message, true);
   } else if (message.content === prefix + 'entrance off') {
@@ -185,7 +186,7 @@ bot.on('voiceStateUpdate', async (oldState, newState) => {
 
   // TODO: Switching between channels
   if (!oldChannel && newChannel) {
-    console.log(`New user joined channel: ${newState.guild.name}`);
+    console.log(`New user joined channel: ${newState.id}`);
 
     const user = newState.id;
     const record = await db.get(user);
@@ -222,18 +223,11 @@ bot.on('voiceStateUpdate', async (oldState, newState) => {
         console.log(err);
       }
     } else {
-      serverQueue.songs.push(song);
-
       console.log('Adding song to queue: ', song);
+      serverQueue.songs.push(song);
     }
   } else if (oldChannel && !newChannel) {
     console.log(`User left the channel.`);
+    // TODO: exit music?
   }
 });
-
-const init = async () => {
-  // const result = await db.get('365579546256343060');
-  // console.log(result);
-};
-
-init();
