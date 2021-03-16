@@ -192,8 +192,10 @@ bot.on('voiceStateUpdate', async (oldState, newState) => {
 
     if (!record) return; // Do nothing if no record
 
-    const { song } = record;
+    const { song, enabled } = record;
 
+    if (!enabled) return; // Exit if user has disabled entrance music
+    
     const serverQueue = queue.get(newState.guild.id);
 
     if (!serverQueue) {
