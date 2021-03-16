@@ -79,7 +79,7 @@ const entranceMusic = async (message) => {
   const startTime = args[2] || '0:00';
   const endTime = args[3] || null;
 
-  if (!songUrl) return message.channel.send('No YouTube URL to use!');
+  if (!songUrl || !songUrl.includes('youtube')) return message.channel.send('No valid YouTube URL to use!');
 
   const songInfo = await ytdl.getInfo(songUrl);
 
@@ -176,8 +176,6 @@ bot.on('message', async (message) => {
   }
 });
 
-const handleUserJoin = (voiceState) => {};
-
 bot.on('voiceStateUpdate', async (oldState, newState) => {
   console.log('voiceStateUpdate');
 
@@ -227,7 +225,7 @@ bot.on('voiceStateUpdate', async (oldState, newState) => {
       serverQueue.songs.push(song);
     }
   } else if (oldChannel && !newChannel) {
-    console.log(`User left the channel.`);
     // TODO: exit music?
+    console.log(`User left the channel.`);
   }
 });
