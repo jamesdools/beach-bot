@@ -125,7 +125,32 @@ bot.on('message', async (message) => {
   console.log('Guild ID: ' + message.guild.id);
 
   if (message.content.startsWith(prefix + 'beach')) {
-    message.channel.send('shirt!');
+    message.channel.send('shirt!'); 
+  } else if (message.content.startsWith(prefix + 'help')) {
+      const exampleEmbed = {
+        color: '#fed049',
+        author: {
+          name: 'BeachBot',
+          url: 'https://github.com/jamesdools/beach-bot',
+        },
+        description: 'Everyone deserves entrance music.',
+        fields: [
+          {
+            name: '\u200B',
+            value: '\u200B',
+          },
+          {
+            name: '`~entrance` [url] [startTime]',
+            value: '> startTime format `mm:ss`, eg. 2:48',
+          },
+        ],
+        image: {
+          url: 'https://media.tenor.com/images/057161e766253130ca174e0b3740c0cd/tenor.gif',
+        }
+      };
+      
+      message.channel.send({ embed: exampleEmbed });
+
   } else if (message.content.startsWith(prefix + 'entrance')) {
     // checkVoice(message);
     await entranceMusic(message);
