@@ -2,6 +2,7 @@ require('dotenv').config();
 
 const Discord = require('discord.js');
 const ytdl = require('ytdl-core');
+// const ytdl = require("discord-ytdl-core");
 const db = require('./db');
 
 const bot = new Discord.Client();
@@ -50,25 +51,28 @@ const checkVoice = (message) => {
   }
 };
 
-const entranceMusic = async (message) => {
+const entranceMusic = async (message, songType) => {
   const { args, command } = parseArgs(message.content);
   const songUrl = args[1];
+  const startTime = args[2] || '0s';
 
   if (!songUrl) return message.channel.send('No YouTube URL to use!');
 
   const songInfo = await ytdl.getInfo(songUrl);
+
   const song = {
     title: songInfo.videoDetails.title,
     url: songInfo.videoDetails.video_url,
+    startTime,
   };
 
-  
   const user = message.author.id;
   const name = message.author.username;
-  
-  console.log(`user: ${user}`);
+  console.log(message.author);
+
   console.log(song);
-  console.log('Entrance music set');
+  console.log(`User: ${name} - entrance music set`);
+  console.log(`ID: ${user}`);
 
   await db.save(user, song);
 
@@ -85,8 +89,15 @@ const play = (guild, song) => {
     return;
   }
 
+  const ytdlContent = ytdl(song.url, {
+      filter: 'audioonly',
+      begin: song.startTime
+    });
+
+  console.log(ytdlContent);
+
   const dispatcher = serverQueue.connection
-    .play(ytdl(song.url))
+    .play(ytdlContent)
     .on('finish', () => {
       serverQueue.songs.shift();
       play(guild, serverQueue.songs[0]);
@@ -107,13 +118,16 @@ bot.on('message', async (message) => {
   console.log('Guild ID: ' + message.guild.id);
 
   if (message.content.startsWith(prefix + 'beach')) {
-    console.log(message.channel);
     message.channel.send('shirt!');
   } else if (message.content.startsWith(prefix + 'entrance')) {
-    checkVoice(message);
+    // checkVoice(message);
     await entranceMusic(message);
   }
 });
+
+const handleUserJoin = (voiceState) => {
+
+}
 
 bot.on('voiceStateUpdate', async (oldState, newState) => {
   console.log('voiceStateUpdate');
@@ -121,13 +135,16 @@ bot.on('voiceStateUpdate', async (oldState, newState) => {
   const oldChannel = oldState.channelID;
   const newChannel = newState.channelID;
 
+  // TODO: Switching between channels
   if (!oldChannel && newChannel) {
     console.log(`New user joined channel: ${newState.guild.name}`);
 
     const user = newState.id;
-    const { song } = await db.get(user);
+    const record = await db.get(user);
     
-    if (!song) return; // Do nothing if no song is set
+    if (!record) return; // Do nothing if no record
+
+    const { song } = record;
 
     console.log('Adding song to queue: ', song);
 
@@ -160,16 +177,14 @@ bot.on('voiceStateUpdate', async (oldState, newState) => {
 
         console.log(`${song.title} queued up!`);
     }
+  } else if (oldChannel && !newChannel) {
+    console.log(`User left the channel.`);
   }
 });
 
 const init = async () => {
-  // await db.save('test-user-id', {
-  //   title: 'title',
-  //   url: 'https://www.youtube.com/watch?v=WWyI-58gpic'
-  // });
-
   // const result = await db.get('365579546256343060');
   // console.log(result);
 }
+
 init();
