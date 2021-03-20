@@ -25,3 +25,14 @@ which will be accessible from the Discord Developer portal.
 
 ### Storage
 The project uses [`lowdb`](https://github.com/typicode/lowdb) as a lightweight solution to persistent storage. This will save a `db.json` on the file system to keep user's entrance songs saved.
+
+## Deployment
+This project has been a trial of using Amazon Linux EC2 (typically using CentOS 7 & a Jenkins pipeline).
+
+How it was deployed:
+
+1. **Connect to instance** `ssh -i <cert> <ec2instance>`
+2. **Install Node** `curl -fsSL https://rpm.nodesource.com/setup_14.x | sudo bash -` \ `sudo yum install -y nodejs`
+3. **Install Git** `sudo yum install git -y`
+4. **Clone repo** `git clone https://github.com/jamesdools/beachbot.git`
+
