@@ -13,14 +13,18 @@ const parseArgs = (content) => {
   return { args, command };
 };
 
+const parseUrl = (url, message) => {
+  if (!url.includes('youtube')) return message.channel.send('No valid YouTube URL to use!');
+
+  return url.replace(/[\<\>]/g, ''); // remove < > characters (to stop chat embeds)
+}
+
 const registerMusic = async (message) => {
   const { args } = parseArgs(message.content);
-  const songUrl = args[1];
+  const songUrl = parseUrl(args[1]);
   const startTime = args[2] || '0:00';
   const endTime = args[3] || null;
-
-  if (!songUrl || !songUrl.includes('youtube')) return message.channel.send('No valid YouTube URL to use!');
-
+  
   const songInfo = await ytdl.getInfo(songUrl);
 
   const song = {
@@ -43,57 +47,8 @@ const registerMusic = async (message) => {
   return message.channel.send(`**${name}**'s entrance now music set: _${song.title}_`);
 };
 
-const play = (guild, song) => {
-  const serverQueue = queue.get(guild.id);
-
-  if (!song) {
-    serverQueue.voiceChannel.leave();
-    queue.delete(guild.id);
-
-    return;
-  }
-
-  let nowPlayingString = `Now playing: ${song.title} from ${song.startTime}`;
-
-  ffmpegArgs = ['-ss', song.startTime];
-
-  if (song.endTime) { // TODO: Add stable support for endTime
-    // ffmpegArgs.push('-to', song.endTime);
-    // nowPlayingString = `${nowPlayingString} to ${song.endTime}`;
-  }
-
-  console.log(nowPlayingString);
-
-  const ytdlContent = ytdl(song.url, {
-    filter: 'audioonly',
-    opusEncoded: true,
-    encoderArgs: ffmpegArgs,
-  });
-
-  const dispatcher = serverQueue.connection
-    .play(ytdlContent, { type: 'opus' })
-    .on('finish', () => {
-      console.log('Song finished');
-      serverQueue.songs.shift();
-      play(guild, serverQueue.songs[0]);
-    })
-    .on('error', (error) => console.error('err'));
-
-  dispatcher.setVolumeLogarithmic(serverQueue.volume / 5);
-};
-
-const handleEntrance = async (voiceState) => {
-
-    const user = voiceState.id;
-    const record = await db.get(user);
-
-    if (!record) return; // Do nothing if no record
-
-    const { song, enabled } = record;
-
-    if (!enabled) return; // Exit if user has disabled entrance music
-    
-    const serverQueue = queue.get(voiceState.guild.id);
+const addToPlayQueue = async (voiceState, song) => {
+ const serverQueue = queue.get(voiceState.guild.id);
 
     if (!serverQueue) {
       const queueContruct = {
@@ -122,10 +77,66 @@ const handleEntrance = async (voiceState) => {
       console.log('Adding song to queue: ', song);
       serverQueue.songs.push(song);
     }
+}
+
+const play = (guild, song) => {
+  const serverQueue = queue.get(guild.id);
+
+  if (!song) {
+    serverQueue.voiceChannel.leave();
+    queue.delete(guild.id);
+
+    return;
+  }
+
+  let nowPlayingString = `Now playing: ${song.title} from ${song.startTime}`;
+
+  ffmpegArgs = ['-ss', song.startTime];
+
+  if (song.endTime) { // TODO: Add stable support for endTime
+    ffmpegArgs.push('-to', song.endTime);
+    nowPlayingString = `${nowPlayingString} to ${song.endTime}`;
+  }
+
+  console.log(nowPlayingString);
+
+  const ytdlContent = ytdl(song.url, {
+    filter: 'audioonly',
+    opusEncoded: true,
+    encoderArgs: ffmpegArgs,
+  });
+
+  const dispatcher = serverQueue.connection
+    .play(ytdlContent, { type: 'opus' })
+    .on('finish', () => {
+      console.log('Song finished');
+      serverQueue.songs.shift();
+      play(guild, serverQueue.songs[0]);
+    })
+    .on('error', (error) => {
+      console.error('Error playing song:');
+      console.error(error);
+      serverQueue.voiceChannel.leave();
+    });
+
+  dispatcher.setVolumeLogarithmic(serverQueue.volume / 5);
+};
+
+const handleEntrance = async (voiceState) => {
+    const user = voiceState.id;
+    const record = await db.get(user);
+
+    if (!record) return; // Do nothing if no song on record
+
+    const { song, enabled } = record;
+
+    if (!enabled) return; // Exit if user has disabled entrance music
+
+    await addToPlayQueue(voiceState, song);   
 };
 
 module.exports = {
   handleEntrance,
   registerMusic,
-  play
+  play,
 }
