@@ -116,7 +116,11 @@ const play = (guild, song) => {
     .on('error', (error) => {
       console.error('Error playing song:');
       console.error(error);
+
       serverQueue.voiceChannel.leave();
+      queue.delete(guild.id);
+    
+      return;
     });
 
   dispatcher.setVolumeLogarithmic(serverQueue.volume / 5);
