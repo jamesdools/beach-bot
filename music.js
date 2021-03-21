@@ -114,11 +114,12 @@ const play = (guild, song) => {
       play(guild, serverQueue.songs[0]);
     })
     .on('error', (error) => {
-      console.error('Error playing song:');
+      console.error('discord-ytdl-core errored before finishing.');
       console.error(error);
 
+      // TODO: verify correct queue handling here
       serverQueue.voiceChannel.leave();
-      queue.delete(guild.id);
+      // queue.delete(guild.id);
     
       return;
     });

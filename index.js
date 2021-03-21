@@ -12,16 +12,37 @@ const prefix = '~';
 
 const helpScreen = {
   color: '#fed049',
+  title: 'BeachBot commands',
   author: {
-    name: 'BeachBot',
+    name: '',
     url: 'https://github.com/jamesdools/beach-bot',
   },
   description: 'Everyone deserves entrance music.',
   fields: [
     {
-      name: '`~entrance` \t [url] \t [startTime]',
-      value: '**url** must be a valid YouTube link\n\
-      **startTime** format `mm:ss`, eg. `2:48`',
+      name: '\u200B',
+      value: '━━━━',
+    },
+    {
+      name: '`~entrance` \t url \t start \t end',
+      value: 'Set your entrance music for when you enter a voice channel.',
+    },
+    {
+      name: 'Example usage:',
+      value: '`~entrance https://www.youtube.com/watch?v=TzaVd6zl2bA 1:20 1:36`'
+    },
+    {
+      name: 'url',
+      value: 'Must be a valid YouTube link.' + 
+      '\nTip: _add < > around url to stop the video preview from showing in the channel._',
+    },
+    {
+      name: 'start / end',
+      value: 'Both optional. If given, must be a valid timestamp, eg. 0:25 or 2:21.',
+    },
+    {
+      name: '\u200B',
+      value: '━━━━',
     },
     {
       name: '`~entrance` \t **on** | **off**',
